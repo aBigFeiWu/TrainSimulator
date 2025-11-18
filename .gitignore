@@ -1,0 +1,28 @@
+# 编译产物和编译器输出文件
+build/
+cmake-build-*/
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
+*.pdb
+*.ilk
+
+# CMake 缓存文件
+CMakeFiles/
+CMakeCache.txt
+Testing/
+Makefile
+cmake_install.cmake
+compile_commands.json
+
+# 日志和编辑器临时文件
+*.log
+*.tmp
+*.swp
+*.swo
+*.user
+*.DS_Store
