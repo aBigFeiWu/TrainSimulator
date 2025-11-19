@@ -7,18 +7,18 @@
 #include <ws2tcpip.h>
 #include <stdexcept>
 #include <vector>
+#include <cstring>
 
-// 链接 Winsock 库
+// 链接 Winsock
 #pragma comment(lib, "ws2_32.lib")
 
-// PImpl模式的实现
+// PImpl 模式的实现
 class UdpCommunicator::UdpImpl {
 public:
     SOCKET sock;
     sockaddr_in server_addr;
-    uint32_t frame_counter;
 
-    UdpImpl() : sock(INVALID_SOCKET), frame_counter(0) {
+    UdpImpl() : sock(INVALID_SOCKET) {
         // 初始化 Winsock
         WSADATA wsaData;
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -61,9 +61,9 @@ bool UdpCommunicator::send(const void* payload, size_t payload_size) {
     }
 
     // 1. 准备帧头
-    NetworkFrameHeader header;
-    header.frame_flag = 0xA5A56666; // 固定的帧头标记
-    header.frame_number = pImpl->frame_counter++;
+    NetworkFrameHeader header{};
+    header.frame_flag = 0xA5A56666; // 固定的帧头标识
+    header.frame_number = 0;        // 协议要求固定为 0
     header.frame_length = static_cast<uint32_t>(payload_size);
     header.reserved = 0;
 
@@ -73,13 +73,13 @@ bool UdpCommunicator::send(const void* payload, size_t payload_size) {
     memcpy(packet.data() + sizeof(NetworkFrameHeader), payload, payload_size);
 
     // 3. 发送数据包
-    int bytes_sent = sendto(pImpl->sock, packet.data(), packet.size(), 0,
+    int bytes_sent = sendto(pImpl->sock, packet.data(), static_cast<int>(packet.size()), 0,
                             (const sockaddr*)&pImpl->server_addr, sizeof(pImpl->server_addr));
 
-    return bytes_sent == packet.size();
+    return bytes_sent == static_cast<int>(packet.size());
 }
 
 bool UdpCommunicator::is_initialized() const {
-    // 成功初始化的主要标志是 pImpl 有效且其内部的 socket 句柄有效。
+    // 成功初始化的主要标志：pImpl 有效且 socket 句柄有效
     return pImpl != nullptr && pImpl->sock != INVALID_SOCKET;
 }

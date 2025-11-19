@@ -34,7 +34,13 @@ void MillisecondTimer::start() {
         timerThread_.join();
     }
     timerThread_ = std::thread(&MillisecondTimer::threadProc, this);
-    SetThreadPriority(timerThread_.native_handle(), THREAD_PRIORITY_HIGHEST);
+#ifdef _WIN32
+    // native_handle() is a HANDLE on MSVC, but MinGW returns an integer; cast safely for WinAPI use.
+    HANDLE hThread = reinterpret_cast<HANDLE>(timerThread_.native_handle());
+    if (hThread != nullptr) {
+        SetThreadPriority(hThread, THREAD_PRIORITY_HIGHEST);
+    }
+#endif
 }
 
 void MillisecondTimer::stop() {

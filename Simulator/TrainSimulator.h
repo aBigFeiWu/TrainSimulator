@@ -15,7 +15,17 @@
 #include <string>
 #include <memory>
 
-class TrainSimulator {
+#ifdef _WIN32
+#  ifdef TRAINSIMULATOR_EXPORTS
+#    define TRAIN_SIM_API __declspec(dllexport)
+#  else
+#    define TRAIN_SIM_API __declspec(dllimport)
+#  endif
+#else
+#  define TRAIN_SIM_API
+#endif
+
+class TRAIN_SIM_API TrainSimulator {
 public:
     explicit TrainSimulator(const SimulatorConfiguration& config);
     ~TrainSimulator();

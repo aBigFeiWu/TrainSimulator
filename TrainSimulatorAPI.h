@@ -34,6 +34,7 @@ struct SimulatorConfig_C {
     int trajectory_type = 1;
     int trajectory_ID_user2 = 2;
     int trajectory_type_user2 = 1;
+    int enable_second_user = 0; // 0: 单用户；1: 双用户
 
     //TestSequence
     const wchar_t* SequenceID;

@@ -1,31 +1,26 @@
 //
 // Created by fyh on 2025/7/23.
 //
-
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
-#pragma once // 使用pragma once防止头文件重复包含
+#pragma once
 
-#include <cstdint> // 为了使用如 uint32_t 等标准整数类型
+#include <cstdint>
 
 /**
- * @file Protocol.h
- * @brief 定义了通信协议中使用的数据结构。
- * * 使用 #pragma pack(push, 1) 来确保结构体成员之间没有内存对齐填充，
- * 这对于跨平台或不同编译器间的二进制数据交换至关重要。
+ * 网络注入协议（V2.4）结构定义，严格 1 字节对齐。
  */
-
 #pragma pack(push, 1)
 
-// --- 网络通信的通用帧头 ---
+// 16B 网络帧头
 struct NetworkFrameHeader {
-    uint32_t frame_flag;
-    uint32_t frame_number;
-    uint32_t frame_length;
-    uint32_t reserved;
+    uint32_t frame_flag;    // 固定 0xA5A56666
+    uint32_t frame_number;  // 协议要求固定 0
+    uint32_t frame_length;  // payload 实际长度
+    uint32_t reserved;      // 填 0
 };
 
-// --- 每个用户的启动参数块（200 字节） ---
+// 单个用户 200B 启动参数块
 struct StartUserParams {
     unsigned int trajectory_id;
     unsigned int trajectory_type;
@@ -39,28 +34,29 @@ struct StartUserParams {
     double reserved_after_pitch[9];
 };
 
-// --- 开始指令 ---
+// 启动指令：32B 头 + N * 200B 用户块
 struct StartCommand {
-    unsigned long long command_word;
-    unsigned int reserved_after_cmd;
-    unsigned int data_length;
-    unsigned long long simulation_start_time;
-    unsigned long long simulation_duration;
+    uint64_t command_word;           // 0x000000000ABC0001（单）或 0x000000000ABC0002（双）
+    uint32_t reserved_after_cmd;     // 4B 保留
+    uint32_t data_length;            // 232（单用户）或 432（双用户）
+    uint64_t simulation_start_time;  // 2006-01-01 至今的毫秒数
+    uint64_t simulation_duration;    // 仿真持续时间
     StartUserParams users[2];
 };
 
 static_assert(sizeof(StartUserParams) == 200, "StartUserParams should remain 200 bytes");
 static_assert(sizeof(StartCommand) == 32 + 2 * sizeof(StartUserParams), "StartCommand size should account for two users");
 
-// --- 停止指令 ---
+// 停止指令：固定 232B
 struct StopCommand {
-    unsigned long long command_word;
-    unsigned int data_length;
-    unsigned int reserved_int;
-    double reserved_doubles[27];
+    uint64_t command_word;       // 0x000000000ABC0003
+    uint32_t reserved_after_cmd; // 4B 保留
+    uint32_t data_length;        // 固定 232
+    double reserved_doubles[27]; // 216B 保留区
 };
+static_assert(sizeof(StopCommand) == 232, "StopCommand size must be 232 bytes per protocol");
 
-// --- 轨迹数据 ---
+// 轨迹数据：固定 248B
 struct TrajectoryData {
     unsigned int trajectory_type;
     unsigned int trajectory_id;
@@ -93,10 +89,8 @@ struct TrajectoryData {
     double carrier_angular_jerk_y;
     double carrier_angular_jerk_z;
 };
-
 static_assert(sizeof(TrajectoryData) == 248, "TrajectoryData size expected by UDP consumer");
 
-// --- 双用户轨迹数据包 ---
 struct DualTrajectoryData {
     TrajectoryData user1;
     TrajectoryData user2;

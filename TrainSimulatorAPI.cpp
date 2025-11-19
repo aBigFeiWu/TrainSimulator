@@ -25,6 +25,7 @@ API_DECL void* CreateSimulator(SimulatorConfig_C config) {
         cpp_config.trajectory_type = config.trajectory_type;
         cpp_config.trajectory_ID_user2 = config.trajectory_ID_user2;
         cpp_config.trajectory_type_user2 = config.trajectory_type_user2;
+        cpp_config.enable_second_user = (config.enable_second_user != 0);
 
         auto simulator = new TrainSimulator(cpp_config);
 
